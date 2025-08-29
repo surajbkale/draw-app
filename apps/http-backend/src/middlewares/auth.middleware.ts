@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { JWT_SECRET } from "@repo/backend-common/config";
 
 export function authMiddleware(
   req: Request,
@@ -8,10 +9,13 @@ export function authMiddleware(
 ) {
   const token = req.headers["authorization"] ?? "";
 
-  const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+  const decoded = jwt.verify(token, JWT_SECRET);
+
+  if (typeof decoded === "string") {
+    return;
+  }
 
   if (decoded) {
-    // @ts-ignore
     req.userId = decoded.userId;
     next();
   } else {
