@@ -2,7 +2,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -15,7 +14,7 @@ model User {
   email         String        @unique 
   password      String      
   name          String
-  photo         String
+  photo         String?
   rooms         Room[]
   chats         Chat[]
 }

@@ -7,46 +7,97 @@ import {
   SignInSchema,
   CreateRoomSchema,
 } from "@repo/common/types";
+import { prismaClient } from "@reop/db/client";
+import bcrypt from "bcryptjs";
 
 const app = express();
+app.use(express.json());
 
-app.post("/signup", (req, res) => {
-  const data = CreateUserSchema.safeParse(req.body);
-  if (!data.success) {
+app.post("/signup", async (req, res) => {
+  const parsedData = CreateUserSchema.safeParse(req.body);
+
+  if (!parsedData.success) {
     res.json({
-      message: "Incorrect inputs",
+      message: "Incorrect Inputs",
     });
     return;
   }
 
-  // db call
+  const hashedPassword = await bcrypt.hash(parsedData.data?.password, 10);
 
-  res.json({
-    userId: "123",
-  });
+  try {
+    const user = await prismaClient.user.create({
+      data: {
+        email: parsedData.data?.username,
+        password: hashedPassword,
+        name: parsedData.data?.name,
+      },
+    });
+
+    res.status(201).json({
+      message: "User Signed Up successfully",
+      userId: user.id,
+    });
+  } catch (e) {
+    res.status(411).json({
+      message: "User with this email already exists",
+    });
+  }
 });
 
-app.post("/signin", (req, res) => {
-  const data = SignInSchema.safeParse(req.body);
-  if (!data.success) {
+app.post("/signin", async (req, res) => {
+  const parsedData = SignInSchema.safeParse(req.body);
+
+  if (!parsedData.success) {
     res.json({
-      message: "Incorrect inputs",
+      message: "Invalid Credentials",
     });
     return;
   }
 
-  // db call
-  const userId = 1;
-  const token = jwt.sign(
-    {
-      userId,
-    },
-    JWT_SECRET
-  );
+  try {
+    const user = await prismaClient.user.findFirst({
+      where: {
+        email: parsedData.data?.username,
+      },
+    });
 
-  res.json({
-    token,
-  });
+    if (!user) {
+      res.json({
+        message: "Not authorized",
+      });
+      return;
+    }
+
+    const isValidPassword = await bcrypt.compare(
+      parsedData.data?.password,
+      user.password
+    );
+
+    if (!isValidPassword) {
+      res.status(411).json({
+        message: "Incorrect Password",
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user?.id,
+      },
+      JWT_SECRET,
+      { expiresIn: "96h" }
+    );
+
+    res.status(200).json({
+      token,
+      message: "User signed in successfully",
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
 });
 
 app.post("/room", authMiddleware, (req, res) => {
