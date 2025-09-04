@@ -7,7 +7,7 @@ import {
   SignInSchema,
   CreateRoomSchema,
 } from "@repo/common/types";
-import { prismaClient } from "@reop/db/client";
+import { prismaClient } from "@repo/db/client";
 import bcrypt from "bcryptjs";
 
 const app = express();
@@ -132,6 +132,24 @@ app.post("/room", authMiddleware, async (req, res) => {
       message: "Internal Server Error",
     });
   }
+});
+
+app.get("/chats/:roomId", async (req, res) => {
+  const roomId = Number(req.params.roomId);
+
+  const messages = await prismaClient.chat.findMany({
+    where: {
+      roomId: roomId,
+    },
+    orderBy: {
+      id: "desc",
+    },
+    take: 50,
+  });
+
+  return res.json({
+    messages,
+  });
 });
 
 app.listen(5000);

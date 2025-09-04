@@ -9,7 +9,7 @@
     "dev": "pnpm run build && pnpm run start"
   },
   "dependencies": {
-    "@reop/db": "workspace:*",
+    "@repo/db": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
     "bcryptjs": "^3.0.2",
     "express": "^5.1.0",

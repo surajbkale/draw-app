@@ -20,7 +20,7 @@ importers:
 
   apps/http-backend:
     dependencies:
-      '@reop/db':
+      '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
       '@types/jsonwebtoken':
@@ -88,6 +88,9 @@ importers:
 
   apps/ws-backend:
     dependencies:
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
