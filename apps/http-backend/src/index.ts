@@ -82,7 +82,7 @@ app.post("/signin", async (req, res) => {
 
     const token = jwt.sign(
       {
-        id: user?.id,
+        userId: user?.id,
       },
       JWT_SECRET,
       { expiresIn: "96h" }
@@ -100,9 +100,10 @@ app.post("/signin", async (req, res) => {
   }
 });
 
-app.post("/room", authMiddleware, (req, res) => {
-  const data = CreateRoomSchema.safeParse(req.body);
-  if (!data.success) {
+app.post("/room", authMiddleware, async (req, res) => {
+  const parsedData = CreateRoomSchema.safeParse(req.body);
+
+  if (!parsedData.success) {
     res.json({
       message: "Incorrect inputs",
     });
@@ -110,10 +111,27 @@ app.post("/room", authMiddleware, (req, res) => {
   }
 
   // db call
+  try {
+    const userId = req.userId;
 
-  res.json({
-    roomId: 123,
-  });
+    console.log(userId);
+
+    const room = await prismaClient.room.create({
+      data: {
+        slug: parsedData.data.name,
+        adminId: userId as string,
+      },
+    });
+
+    res.json({
+      roomId: room.id,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
 });
 
 app.listen(5000);
